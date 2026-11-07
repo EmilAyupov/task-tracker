@@ -6,7 +6,7 @@ on:
     workflow_dispatch:
 
 permissions:
-    contents: read
+    contents: write
 
 jobs:
     tests:
@@ -41,3 +41,37 @@ jobs:
                   path: allure-report/
                   if-no-files-found: warn
                   retention-days: 7
+
+            - name: Load Allure history
+              if: always()
+              continue-on-error: true
+              uses: actions/checkout@v7
+              with:
+                  ref: gh-pages
+                  path: gh-pages
+
+            - name: Generate Allure report
+              if: always()
+              uses: simple-elf/allure-report-action@v1.15
+              with:
+                  allure_results: allure-results
+                  allure_report: allure-report
+                  gh_pages: gh-pages
+                  allure_history: allure-history
+
+            - name: Upload Allure HTML
+              if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: allure-html-report
+                  path: allure-history/
+                  if-no-files-found: warn
+                  retention-days: 7
+
+            - name: Publish Allure report
+              if: always() && github.ref == 'refs/heads/main'
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_branch: gh-pages
+                  publish_dir: allure-history
