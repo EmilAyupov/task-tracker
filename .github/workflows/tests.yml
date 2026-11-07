@@ -32,3 +32,29 @@ jobs:
                   path: allure-results/
                   if-no-files-found: warn
                   retention-days: 7
+
+            - name: Load Allure history
+              if: always()
+              continue-on-error: true
+              uses: actions/checkout@v7
+              with:
+                  ref: gh-pages
+                  path: gh-pages
+
+            - name: Generate Allure HTML report
+              if: always()
+              uses: simple-elf/allure-report-action@v1.15
+              with:
+                  allure_results: allure-results
+                  allure_report: allure-report
+                  gh_pages: gh-pages
+                  allure_history: allure-history
+
+            - name: Upload HTML report
+              if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: allure-html-report
+                  path: allure-report/
+                  if-no-files-found: warn
+                  retention-days: 7
