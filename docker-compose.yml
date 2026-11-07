@@ -1,0 +1,7 @@
+
+services:
+    tests:
+        build: .
+        volumes:
+            - ./allure-results:/app/allure-results
+        command: ["pytest", "-v", "--alluredir=/app/allure-results"]

@@ -1,0 +1,1 @@
+{"uuid": "2ab5381f-017b-4cfd-b898-6339d2fde9ee", "children": ["c5f1dabe-dd17-424a-af6b-3b3b5e45a548"], "befores": [{"name": "clean_database", "status": "passed", "start": 1794066760612, "stop": 1794066760624}], "afters": [{"name": "clean_database::<lambda>", "start": 1794066760660}], "start": 1794066760612, "stop": 1794066760660}
