@@ -1,15 +1,17 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 
 import allure
 import pytest
 from fastapi.testclient import TestClient
+from httpx2 import Response
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 # Импортируем модели, чтобы SQLAlchemy зарегистрировал таблицы
 # в metadata до выполнения create_all().
 from app.database import Base, get_db
 from app.main import app
+from app.schemas import TaskResponse
 
 # Отдельная SQLite-база исключительно для тестов.
 # Основная база приложения tasks.db не затрагивается.
@@ -35,7 +37,7 @@ SessionLocal = sessionmaker(
 
 # Зависимость FastAPI: приложение будет получать
 # сессии именно из тестовой БД, а не из основной.
-def override_get_db():
+def override_get_db() -> Iterator[Session]:
     db = SessionLocal()
     try:
         yield db
@@ -44,7 +46,7 @@ def override_get_db():
 
 
 @pytest.fixture(autouse=True)
-def clean_database(monkeypatch):
+def clean_database(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     Выполняется автоматически перед каждым тестом.
 
@@ -67,7 +69,8 @@ def clean_database(monkeypatch):
 
 
 @pytest.fixture
-def db_session(clean_database):
+def db_session(clean_database: None) -> Iterator[Session]:
+    del clean_database
     """
     Предоставляет тесту отдельную SQLAlchemy-сессию.
 
@@ -93,13 +96,13 @@ def client() -> Iterator[TestClient]:
 
 
 @pytest.fixture
-def attach_response():
+def attach_response() -> Callable[[Response], None]:
     """
     Возвращает функцию для прикрепления HTTP-запроса
     и HTTP-ответа к Allure-отчёту.
     """
 
-    def _attach_response(response):
+    def _attach_response(response: Response) -> None:
         request = response.request
 
         # Метод и URL запроса.
@@ -137,8 +140,7 @@ def attach_response():
 
 
 @pytest.fixture
-def created_task(client, clean_database):
-
+def created_task(client: TestClient) -> TaskResponse:
     response = client.post(
         "/tasks",
         json={
@@ -149,12 +151,11 @@ def created_task(client, clean_database):
 
     assert response.status_code == 201
 
-    return response.json()
+    return TaskResponse.model_validate_json(response.content)
 
 
 @pytest.fixture
-def task_with_cleanup(client):
-    # Подготовка
+def task_with_cleanup(client: TestClient) -> Iterator[int]:
     response = client.post(
         "/tasks",
         json={
@@ -165,13 +166,11 @@ def task_with_cleanup(client):
 
     assert response.status_code == 201
 
-    task_id = response.json()["id"]
+    created = TaskResponse.model_validate_json(response.content)
+    task_id = created.id
 
     try:
         yield task_id
-
     finally:
-        # Очистка гарантированно выполняется после yield
         delete_response = client.delete(f"/tasks/{task_id}")
-
         assert delete_response.status_code == 204

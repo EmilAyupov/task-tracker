@@ -12,3 +12,5 @@ git switch --orphan gh-pages
 git commit --allow-empty -m "Initialize GitHub Pages"
 git push -u origin gh-pages
 git switch main
+
+git hook run pre-commit

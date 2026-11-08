@@ -11,3 +11,10 @@ class TaskUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, pattern=r".*\S.*")
     description: str | None = None
     completed: bool | None = None
+
+
+class TaskResponse(BaseModel):
+    id: int
+    title: str
+    description: str | None
+    completed: bool

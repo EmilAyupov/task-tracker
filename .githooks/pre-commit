@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Running pre-commit Quality Gate..."
+
+exec ./scripts/quality_gate.sh

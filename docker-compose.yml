@@ -1,7 +1,14 @@
-
 services:
     tests:
         build: .
         volumes:
             - ./allure-results:/app/allure-results
-        command: ["pytest", "-v", "--alluredir=/app/allure-results"]
+            - ./coverage:/app/coverage
+        command:
+            - pytest
+            - -v
+            - --alluredir=/app/allure-results
+            - --cov=app
+            - --cov-report=term-missing
+            - --cov-report=xml:/app/coverage/coverage.xml
+            - --cov-fail-under=90

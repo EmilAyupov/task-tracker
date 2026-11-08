@@ -1,1 +1,0 @@
-{"detail":[{"type":"string_pattern_mismatch","loc":["body","title"],"msg":"String should match pattern '.*\\S.*'","input":"   ","ctx":{"pattern":".*\\S.*"}}]}

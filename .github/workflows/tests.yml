@@ -9,7 +9,58 @@ permissions:
     contents: write
 
 jobs:
+    # 1. Lint and formatting
+    lint:
+        name: Ruff
+        runs-on: ubuntu-24.04
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v7
+
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.14"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+                  pip install ruff
+
+            - name: Ruff lint
+              run: ruff check app tests
+
+            - name: Ruff format
+              run: ruff format --check app tests
+
+    # 2. Static type checking
+    type-check:
+        name: BasedPyright
+        runs-on: ubuntu-24.04
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v7
+
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.14"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+                  pip install basedpyright
+
+            - name: Run BasedPyright
+              run: basedpyright app tests
+
+    # 3. Tests and coverage
     tests:
+        name: Pytest and Coverage
         runs-on: ubuntu-24.04
 
         steps:
@@ -33,17 +84,24 @@ jobs:
                   if-no-files-found: warn
                   retention-days: 7
 
-            - name: Upload HTML report
-              if: always()
-              uses: actions/upload-artifact@v7
+    # 4. Allure report and GitHub Pages
+    allure-report:
+        name: Allure Report
+        runs-on: ubuntu-24.04
+        needs: tests
+        if: always()
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v7
+
+            - name: Download Allure results
+              uses: actions/download-artifact@v7
               with:
-                  name: allure-html-report
-                  path: allure-report/
-                  if-no-files-found: warn
-                  retention-days: 7
+                  name: allure-results
+                  path: allure-results
 
             - name: Load Allure history
-              if: always()
               continue-on-error: true
               uses: actions/checkout@v7
               with:
@@ -51,7 +109,6 @@ jobs:
                   path: gh-pages
 
             - name: Generate Allure report
-              if: always()
               uses: simple-elf/allure-report-action@v1.15
               with:
                   allure_results: allure-results
@@ -59,7 +116,7 @@ jobs:
                   gh_pages: gh-pages
                   allure_history: allure-history
 
-            - name: Upload Allure HTML
+            - name: Upload Allure HTML report
               if: always()
               uses: actions/upload-artifact@v7
               with:
@@ -69,7 +126,7 @@ jobs:
                   retention-days: 7
 
             - name: Publish Allure report
-              if: always() && github.ref == 'refs/heads/main'
+              if: github.ref == 'refs/heads/main'
               uses: peaceiris/actions-gh-pages@v4
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}

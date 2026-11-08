@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 DATABASE_URL = "sqlite:///./tasks.db"
 
@@ -9,7 +9,9 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
 )
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

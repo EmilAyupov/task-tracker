@@ -1,16 +1,20 @@
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from app.models import Task
+from app.schemas import TaskResponse
 
 
-def test_delete_existing_task(client: TestClient):
+def test_delete_existing_task(client: TestClient) -> None:
     response = client.post(
         "/tasks",
         json={"title": "Learn Python"},
     )
     assert response.status_code == 201
-    task_id = response.json()["id"]
+
+    created_task = TaskResponse.model_validate(response.json())
+    task_id = created_task.id
 
     response = client.delete(f"/tasks/{task_id}")
 
@@ -22,19 +26,24 @@ def test_delete_existing_task(client: TestClient):
     assert response.status_code == 404
 
 
-def test_delete_nonexistent_task(client: TestClient):
+def test_delete_nonexistent_task(client: TestClient) -> None:
     response = client.delete("/tasks/999999")
 
     assert response.status_code == 404
 
 
-def test_delete_from_db_existing_task(client: TestClient, db_session):
+def test_delete_from_db_existing_task(
+    client: TestClient,
+    db_session: Session,
+) -> None:
     response = client.post(
         "/tasks",
         json={"title": "Learn Python"},
     )
     assert response.status_code == 201
-    task_id = response.json()["id"]
+
+    created_task = TaskResponse.model_validate(response.json())
+    task_id = created_task.id
 
     response = client.delete(f"/tasks/{task_id}")
 
@@ -48,7 +57,10 @@ def test_delete_from_db_existing_task(client: TestClient, db_session):
     assert task is None
 
 
-def test_delete_from_db_not_existing_task(client: TestClient, db_session):
+def test_delete_from_db_not_existing_task(
+    client: TestClient,
+    db_session: Session,
+) -> None:
     response = client.post(
         "/tasks",
         json={"title": "Learn Python"},
@@ -67,7 +79,10 @@ def test_delete_from_db_not_existing_task(client: TestClient, db_session):
     assert count == current_count
 
 
-def test_task_with_cleanup(client, task_with_cleanup):
+def test_task_with_cleanup(
+    client: TestClient,
+    task_with_cleanup: int,
+) -> None:
     task_id = task_with_cleanup
 
     response = client.get(f"/tasks/{task_id}")
