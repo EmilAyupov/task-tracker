@@ -7,3 +7,8 @@ docker compose run --rm tests
 
 pytest -v --alluredir=/app/allure-results
 allure serve allure-results
+
+git switch --orphan gh-pages
+git commit --allow-empty -m "Initialize GitHub Pages"
+git push -u origin gh-pages
+git switch main
